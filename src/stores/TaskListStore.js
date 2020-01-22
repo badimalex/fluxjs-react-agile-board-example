@@ -17,7 +17,7 @@ class AppStore extends ReduceStore {
   }
 
   reduce(state, action) {
-    console.log(action);
+    // console.log(action);
     switch (action.type) {
       case 'task/udpateStateTask': {
         return {
