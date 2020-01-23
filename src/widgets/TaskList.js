@@ -4,6 +4,8 @@ import React from 'react';
 import Draggable from 'react-draggable';
 import style from '@/pages/style.less';
 
+let uniqDragKey = 0;
+
 class TaskList extends React.PureComponent {
   state = {};
   columnRefs = {};
@@ -24,12 +26,15 @@ class TaskList extends React.PureComponent {
     e.preventDefault();
     statusList.forEach((status, key) => {
       const columnCoord = getCoords(this.columnRefs[key].current);
+      const rect = getCoords(this.columnRefs[key].current);
       const taskCard = e.path.find(el => el.className.indexOf('react-draggable') > -1);
       const taskCoord = getCoords(taskCard);
 
       if (
-        (taskCoord.box.right > columnCoord.left && taskCoord.left < columnCoord.box.right) ||
-        taskCoord.box.left > columnCoord.right
+        e.clientY < rect.top ||
+        e.clientY >= rect.box.bottom ||
+        e.clientX < rect.left ||
+        e.clientX >= rect.box.right
       ) {
         if (
           !this.columnRefs[key].current.classList.contains(style.hoverColumn) &&
@@ -45,12 +50,21 @@ class TaskList extends React.PureComponent {
     this.props.fetchTask();
   }
 
+  handleStart = e => {
+    const { statusList } = this.props.taskStore;
+
+    statusList.forEach((status, key) => {
+      this.columnRefs[key].current.classList.add(style.activeColumn);
+    });
+  };
+
   handleStop = (e, task) => {
     const { statusList } = this.props.taskStore;
 
     e.preventDefault();
     statusList.forEach((status, key) => {
       this.columnRefs[key].current.classList.remove(style.hoverColumn);
+      this.columnRefs[key].current.classList.remove(style.activeColumn);
       const columnCoord = getCoords(this.columnRefs[key].current);
       const taskCard = e.path.find(el => el.className.indexOf('react-draggable') > -1);
       const taskCoord = getCoords(taskCard);
@@ -65,10 +79,12 @@ class TaskList extends React.PureComponent {
   };
 
   mapTaskItem = (task, key) => {
+    uniqDragKey += key + 1;
     return (
       <Draggable
         defaultPosition={{ x: 0, y: 0 }}
-        key={key}
+        key={uniqDragKey}
+        onStart={this.handleStart}
         onStop={e => this.handleStop(e, task)}
         onDrag={e => this.handleDrag(e, task)}
       >
