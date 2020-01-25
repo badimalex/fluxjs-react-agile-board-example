@@ -1,4 +1,3 @@
-
 // ref: https://umijs.org/config/
 export default {
   treeShaking: true,
@@ -6,32 +5,33 @@ export default {
     {
       path: '/',
       component: '../layouts/index',
-      routes: [
-        { path: '/', component: '../pages/index' }
-      ]
-    }
+      routes: [{ path: '/', component: '../pages/index' }],
+    },
   ],
   plugins: [
     // ref: https://umijs.org/plugin/umi-plugin-react.html
-    ['umi-plugin-react', {
-      antd: true,
-      dva: true,
-      dynamicImport: { webpackChunkName: true },
-      title: 'flux-js-street-navigator-example',
-      dll: true,
-      locale: {
-        enable: true,
-        default: 'en-US',
+    [
+      'umi-plugin-react',
+      {
+        antd: true,
+        dva: true,
+        dynamicImport: { webpackChunkName: true },
+        title: 'fluxjs-react-agile-board',
+        dll: true,
+        locale: {
+          enable: true,
+          default: 'en-US',
+        },
+        routes: {
+          exclude: [
+            /models\//,
+            /services\//,
+            /model\.(t|j)sx?$/,
+            /service\.(t|j)sx?$/,
+            /components\//,
+          ],
+        },
       },
-      routes: {
-        exclude: [
-          /models\//,
-          /services\//,
-          /model\.(t|j)sx?$/,
-          /service\.(t|j)sx?$/,
-          /components\//,
-        ],
-      },
-    }],
+    ],
   ],
-}
+};
