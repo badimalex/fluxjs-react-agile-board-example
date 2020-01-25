@@ -9,6 +9,7 @@ let uniqDragKey = 0;
 class TaskList extends React.PureComponent {
   state = {};
   columnRefs = {};
+  activeTask = null;
 
   constructor(props) {
     super(props);
@@ -20,41 +21,40 @@ class TaskList extends React.PureComponent {
     });
   }
 
-  handleDrag = (e, task) => {
-    const { statusList } = this.props.taskStore;
-
-    e.preventDefault();
-    statusList.forEach((status, key) => {
-      const columnCoord = getCoords(this.columnRefs[key].current);
-      const rect = getCoords(this.columnRefs[key].current);
-      const taskCard = e.path.find(el => el.className.indexOf('react-draggable') > -1);
-      const taskCoord = getCoords(taskCard);
-
-      if (
-        e.clientY < rect.top ||
-        e.clientY >= rect.box.bottom ||
-        e.clientX < rect.left ||
-        e.clientX >= rect.box.right
-      ) {
-        if (
-          !this.columnRefs[key].current.classList.contains(style.hoverColumn) &&
-          status.id !== task.taskStatus.id
-        ) {
-          this.columnRefs[key].current.classList.add(style.hoverColumn);
-        }
-      }
-    });
-  };
-
   componentDidMount() {
     this.props.fetchTask();
   }
 
-  handleStart = e => {
+  handleStart = (e, task) => {
     const { statusList } = this.props.taskStore;
 
     statusList.forEach((status, key) => {
       this.columnRefs[key].current.classList.add(style.activeColumn);
+    });
+
+    this.activeTask = document.getElementById(task.taskNumber);
+  };
+
+  insideBox = (taskCoord, columnCoord) => {
+    return (
+      (taskCoord.box.right > columnCoord.left && taskCoord.left < columnCoord.box.right) ||
+      taskCoord.box.left > columnCoord.right
+    );
+  };
+
+  handleDrag = (e, task) => {
+    const { statusList } = this.props.taskStore;
+
+    e.preventDefault();
+    const taskCoord = getCoords(this.activeTask);
+    statusList.forEach((status, key) => {
+      const columnCoord = getCoords(this.columnRefs[key].current);
+
+      if (this.insideBox(taskCoord, columnCoord) && task.taskStatus.title != status.title) {
+        this.columnRefs[key].current.classList.add(style.hoverColumn);
+      } else {
+        this.columnRefs[key].current.classList.remove(style.hoverColumn);
+      }
     });
   };
 
@@ -62,18 +62,17 @@ class TaskList extends React.PureComponent {
     const { statusList } = this.props.taskStore;
 
     e.preventDefault();
+    const taskCoord = getCoords(this.activeTask);
     statusList.forEach((status, key) => {
       this.columnRefs[key].current.classList.remove(style.hoverColumn);
       this.columnRefs[key].current.classList.remove(style.activeColumn);
-      const columnCoord = getCoords(this.columnRefs[key].current);
-      const taskCard = e.path.find(el => el.className.indexOf('react-draggable') > -1);
-      const taskCoord = getCoords(taskCard);
 
-      if (
-        (taskCoord.box.right > columnCoord.left && taskCoord.left < columnCoord.box.right) ||
-        taskCoord.box.left > columnCoord.right
-      ) {
-        this.props.udpateStateTask(task, status.title);
+      const columnCoord = getCoords(this.columnRefs[key].current);
+
+      if (this.insideBox(taskCoord, columnCoord) && task.taskStatus.title != status.title) {
+        setTimeout(() => {
+          this.props.udpateStateTask(task, status.title);
+        }, 10);
       }
     });
   };
@@ -84,11 +83,11 @@ class TaskList extends React.PureComponent {
       <Draggable
         defaultPosition={{ x: 0, y: 0 }}
         key={uniqDragKey}
-        onStart={this.handleStart}
+        onStart={e => this.handleStart(e, task)}
         onStop={e => this.handleStop(e, task)}
         onDrag={e => this.handleDrag(e, task)}
       >
-        <div className={`${style.taskItem} handle`}>
+        <div id={task.taskNumber} className={`${style.taskItem} handle`}>
           <p>{task.taskNumber}</p>
           <span>{task.taskTitle}</span>
         </div>
